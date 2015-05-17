@@ -80,8 +80,6 @@
 
 
 
-
-
 ## Error Handling
 
     throwingFunction = ->

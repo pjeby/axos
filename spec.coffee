@@ -39,8 +39,8 @@ spy.named = (name, args...) ->
 
 
 
-describe "An axos.Strategy instance", -> 
-  
+describe "An axos.Strategy instance", ->
+
   describe "has the same properties as the options used to create it", ->
     for prop in 'onReceive initState onDispose kind'.split(' ')
         it '.'+prop, ->
@@ -55,7 +55,7 @@ describe "An axos.Strategy instance", ->
     for prop in 'onReceive initState onDispose kind'.split(' ')
         s = new Strategy({"#{prop}": null})
         expect(Object.keys(s)).to.deep.equal(k)
-      
+
   it "has a .withKind(kind) that sets .kind and returns the strategy", ->
       s = new Strategy(kind: 99)
       expect(s.kind).to.equal(99)
@@ -70,13 +70,13 @@ describe "An axos.Strategy instance", ->
       s = new Strategy(initState: spy.named('initState'))
       c = s.cell(1, 2, 3)
       expect(s.initState).to.have.been.calledWithExactly(1, 2, 3)
-      expect(s.initState).to.have.been.calledOn(c)     
+      expect(s.initState).to.have.been.calledOn(c)
 
   it "uses the return from .initState() as the Cell .state", ->
       state = {}
       s = new Strategy(initState: -> state)
       expect(s.cell().state).to.equal(state)
-      
+
 
 
 
@@ -159,7 +159,7 @@ describe "axos.send()", ->
                 return done(e)
             done()
         send(@c, 4, 5, 6)
-        expect(s).to.have.been.calledOnce        
+        expect(s).to.have.been.calledOnce
 
 
   describe "when called from within onReceive, invokes other onReceives", ->
@@ -186,7 +186,7 @@ describe "axos.send()", ->
             done()
         send(@c1, 4, 5, 6)
         return
-        
+
 
 
 
@@ -218,7 +218,7 @@ describe "axos.TRY(fn) returns a wrapper function that", ->
 
     it "returns the result of invoking fn", ->
         expect(TRY(-> 42)()).to.exist.and.equal(42)
-        
+
     it "returns axos.CATCH if there's an error", ->
         expect(TRY(-> throw new Error)()).to.equal(CATCH)
 
