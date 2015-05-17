@@ -2,8 +2,6 @@
 should = should()
 chai.use require 'sinon-chai'
 
-axos = require './'
-
 expect_fn = (item) -> expect(item).to.exist.and.be.a('function')
 {spy} = sinon = require 'sinon'
 
@@ -13,6 +11,9 @@ spy.named = (name, args...) ->
     return s
 
 
+{
+    Strategy, Cell, KIND_RESULT, TRY, CATCH, send, msg, afterIO
+} = axos = require './'
 
 
 
@@ -38,9 +39,7 @@ spy.named = (name, args...) ->
 
 
 
-
-describe "An axos.Strategy instance", ->
-  {Strategy, Cell} = axos
+describe "An axos.Strategy instance", -> 
   
   describe "has the same properties as the options used to create it", ->
     for prop in 'onReceive initState onDispose kind'.split(' ')
@@ -80,9 +79,8 @@ describe "An axos.Strategy instance", ->
       
 
 
-describe "axos.Cell instances", ->
 
-  {Strategy, Cell, KIND_RESULT} = axos
+describe "axos.Cell instances", ->
 
   describe "when created via new Cell(kind, strategy, state)", ->
     it "have the specified kind, strategy, and state", ->
@@ -121,22 +119,91 @@ describe "axos.Cell instances", ->
 
 
 
+
+
 describe "axos.send()", ->
 
   describe "invokes the onReceive() of the targeted cells", ->
-    it "in the same order as the calls"
-    it "after send()'s caller has exited"
-    it "in the same event loop pass"
+
+    beforeEach ->
+        @c = new Strategy(onReceive: @spy = spy.named('onReceive')).cell()
+
+    it "in the same order as the calls", (done) ->
+        send(@c, 1, 2, 3)
+        send(@c, 4, 5, 6)
+        afterIO =>
+            try
+                expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
+                expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
+            catch e
+                return done(e)
+            done()
+        return
+
+    it "after send()'s caller has exited", ->
+        send(@c, 1, 2, 3)
+        expect(@spy).to.not.have.been.called
+
+    it "in the same event loop pass", (done) ->
+        s = spy.named('afterIO', axos, 'afterIO')
+        send(@c, 1, 2, 3)
+        afterIO =>
+            s.restore() # remove the spy
+            try
+                expect(s).to.have.been.calledOnce
+                expect(@spy).to.have.been.called
+                expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
+                expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
+            catch e
+                console.log e
+                return done(e)
+            done()
+        send(@c, 4, 5, 6)
+        expect(s).to.have.been.calledOnce        
+
 
   describe "when called from within onReceive, invokes other onReceives", ->
-    it "in the same order as the calls"
-    it "after send()'s caller has exited"
-    it "in the same event loop pass"
+
+    beforeEach ->
+        @s1 = spy.named 'forwarder', (cell, tag, op, arg) => send(@c2, tag, op, arg)
+        @c1 = new Strategy(onReceive: @s1).cell()
+        @c2 = new Strategy(onReceive: @s2 = spy.named('receiver')).cell()
+
+    it "in the same order as the calls, after caller exits, in same pass", (done) ->
+        send(@c1, 1, 2, 3)
+        expect(@s1).to.not.have.been.called
+        expect(@s2).to.not.have.been.called
+        afterIO =>
+            try
+                expect(@s1.firstCall).to.have.been.calledWithExactly(@c1, 1, 2, 3)
+                expect(@s1.secondCall).to.have.been.calledWithExactly(@c1, 4, 5, 6)
+                expect(@s2.firstCall).to.have.been.calledWithExactly(@c2, 1, 2, 3)
+                expect(@s2.secondCall).to.have.been.calledWithExactly(@c2, 4, 5, 6)
+                expect(@s2.firstCall).to.have.been.calledAfter(@s1.secondCall)
+            catch e
+                console.log e
+                return done(e)
+            done()
+        send(@c1, 4, 5, 6)
+        return
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 describe "axos.TRY(fn) returns a wrapper function that", ->
-
-    {TRY, CATCH} = axos
 
     it "is the same function each time", ->
         x = TRY(f1 = ->)
@@ -158,6 +225,21 @@ describe "axos.TRY(fn) returns a wrapper function that", ->
     it "sets axos.CATCH.err to the error thrown", ->
         err = new Error()
         expect(TRY(-> throw err)().err).to.equal(err)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

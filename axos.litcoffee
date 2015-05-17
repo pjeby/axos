@@ -44,6 +44,43 @@
     class Cell
         constructor: (@kind, @strategy, @state) ->
 
+## Message Sending
+
+    afterIO = setImmediate ? (fn) -> setTimeout(fn, 0)
+
+    mq = []
+    scheduled = draining = no
+
+    send = (cell, tag, op, arg) ->
+        mq.push(cell, tag, op, arg)
+        schedule() unless scheduled or draining
+
+    schedule = ->
+        axos.afterIO(drain) unless scheduled
+        scheduled = yes
+
+    drain = ->
+        scheduled = no
+        io_send()
+
+    io_send = ->
+        draining = yes
+        while mq.length
+            cell = mq.shift()
+            cell.strategy.onReceive?.call(
+                cell.state, cell, mq.shift(), mq.shift(), mq.shift()
+            )
+        draining = no
+
+
+
+
+
+
+
+
+
+
 
 ## Error Handling
 
@@ -65,7 +102,13 @@
 
 ## Exposed API
 
-    module.exports = {Strategy, Cell, TRY, CATCH}
+    module.exports = axos = {Strategy, Cell, TRY, CATCH, send, afterIO}
+
+
+
+
+
+
 
 
 
