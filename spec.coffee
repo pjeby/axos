@@ -170,11 +170,14 @@ describe "axos.send()", ->
         @c2 = new Strategy(onReceive: @s2 = spy.named('receiver')).cell()
 
     it "in the same order as the calls, after caller exits, in same pass", (done) ->
+        s = spy.named('afterIO', axos, 'afterIO')
         send(@c1, 1, 2, 3)
         expect(@s1).to.not.have.been.called
         expect(@s2).to.not.have.been.called
         afterIO =>
             try
+                s.restore()
+                expect(s).to.have.been.calledOnce
                 expect(@s1.firstCall).to.have.been.calledWithExactly(@c1, 1, 2, 3)
                 expect(@s1.secondCall).to.have.been.calledWithExactly(@c1, 4, 5, 6)
                 expect(@s2.firstCall).to.have.been.calledWithExactly(@c2, 1, 2, 3)
@@ -185,11 +188,8 @@ describe "axos.send()", ->
                 return done(e)
             done()
         send(@c1, 4, 5, 6)
+        expect(s).to.have.been.calledOnce
         return
-
-
-
-
 
 
 
