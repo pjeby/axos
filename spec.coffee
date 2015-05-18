@@ -21,9 +21,9 @@ promised = (fn) -> -> new Promise (res, rej) =>
     catch e then rej(e)
 
 {
-    Strategy, Cell, KIND_RESULT, TRY, CATCH, send, io_send, afterIO
+    Strategy, Cell, KIND_RESULT, TRY, CATCH, send, io_send, afterIO,
+    VALUE, ERROR, FINAL_VALUE, FINAL_ERROR
 } = axos = require './'
-
 
 
 
@@ -97,6 +97,116 @@ describe "axos.Cell instances", ->
 
     it "default to a default strategy if none given"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  describe "have a .set() method that", ->
+
+    it "errors if called outside .onReceive() or .onRecalc()", promised (done) ->
+        c = new Strategy(
+            onReceive: failSafe done, (c) -> c.set(1, 2)
+        ).cell()
+        expect(-> c.set(1,2)).to.throw(/must be called from/)
+        io_send(c, 3, 4, 5)
+        expect(-> c.set(1,2)).to.throw(/must be called from/)
+        done()
+
+    it "sets the .op and .arg", promised (done) ->
+        c = new Strategy(
+                onReceive: failSafe done, (c) ->
+                    c.set(1,2)
+                    expect(c.op).to.equal(1)
+                    expect(c.arg).to.equal(2)
+                    done()
+            ).cell()
+        io_send(c,3,4,5)
+
+    it "has setValue(), setError(), finish() and abort() shortcuts", ->
+        c = new Strategy().cell()
+        s = spy.named('set', c, 'set')
+        expect(-> c.setValue(1)).to.throw(/must be called from/)
+        expect(s).to.have.been.calledWithExactly(VALUE, 1)
+        s.reset()
+        expect(-> c.setError(2)).to.throw(/must be called from/)
+        expect(s).to.have.been.calledWithExactly(ERROR, 2)
+        s.reset()
+        expect(-> c.finish(3)).to.throw(/must be called from/)
+        expect(s).to.have.been.calledWithExactly(FINAL_VALUE, 3)
+        s.reset()
+        expect(-> c.abort(4)).to.throw(/must be called from/)
+        expect(s).to.have.been.calledWithExactly(FINAL_ERROR, 4)
+        s.restore()
+
+
+
+
+
+    it "is a no-op if a final op has previously been set", ->
+        s = new Strategy(onReceive: (cell, tag, op, arg) -> cell.set(op, arg))
+
+        c = s.cell()
+        io_send(c, 1, ERROR, 2)
+        expect(c.op).to.equal(ERROR)
+        expect(c.arg).to.equal(2)
+
+        for [op, arg] in [[FINAL_VALUE, 3], [ERROR, 4], [VALUE, 5]]
+            io_send(c, 1, op, arg)
+            expect(c.op).to.equal(FINAL_VALUE)
+            expect(c.arg).to.equal(3)
+
+        c = s.cell()
+        io_send(c, 1, VALUE, 1)
+        expect(c.op).to.equal(VALUE)
+        expect(c.arg).to.equal(1)
+
+        for [op, arg] in [[FINAL_ERROR, 2], [VALUE, 3], [ERROR, 4]]
+            io_send(c, 1, op, arg)
+            expect(c.op).to.equal(FINAL_ERROR)
+            expect(c.arg).to.equal(2)
+
+
+    it "sends *last* op and arg to the cell's subscribers"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  describe "have a .triggerRecalc() method that", ->
+    it "errors if called outside .onReceive()"
+    it "calls .onRecalc(cell) on the state once, after onReceive() returns"
+
   describe "have an .addSink(otherCell, tag) method that", ->
     it "subscribes otherCell to receive messages, with the given tag"
     it "can add multiple sinks to the same source"
@@ -110,12 +220,25 @@ describe "axos.Cell instances", ->
   describe "if of KIND_VALUE or KIND_RESULT", ->
     it "send their \"current\" value to subscribed cells"
 
-  describe "have a .set() method that", ->
-    it "errors if called outside .onReceive() or .onRecalc()"
-    it "sets the .op and .arg"
-    it "is a no-op if a final op has previously been set"
-    it "sends *last* op and arg to the cell's subscribers"
-    it "has setValue(), setError(), finish() and abort() shortcuts"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -245,7 +368,6 @@ describe "axos.io_send()", ->
 
 
 describe "Operators", ->
-    {VALUE, ERROR, FINAL_VALUE, FINAL_ERROR} = axos
 
     it "should have appropriate .isError/.isValue/.isFinal properties", ->
         expect(VALUE.isValue).to.be.true
@@ -274,6 +396,13 @@ describe "Operators", ->
         expect(ERROR).to.equal(VALUE.error)
         expect(FINAL_VALUE).to.equal(FINAL_ERROR.value)
         expect(FINAL_ERROR).to.equal(FINAL_VALUE.error)
+
+
+
+
+
+
+
 
 
 

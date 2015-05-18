@@ -43,6 +43,42 @@
 
     class Cell
         constructor: (@kind, @strategy, @state) ->
+            @op = @arg = null
+
+        setValue: (val) -> @set(VALUE, val)
+        setError: (err) -> @set(ERROR, err)
+
+        finish: (val) -> @set(FINAL_VALUE, val)
+        abort:  (err) -> @set(FINAL_ERROR, err)
+
+        set: (op, arg) ->
+            throw new TypeError(
+                "set() must be called from onReceive() or onRecalc()"
+            ) unless this is current_receiver
+            return if @op?.isFinal
+            @op = op
+            @arg = arg
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Message Sending
 
@@ -68,12 +104,17 @@
             throw new Error("io_send() must be invoked in a Zalgo-safe way")
         draining = yes
         send(arguments...) if arguments.length
-        while mq.length
-            cell = mq.shift()
-            cell.strategy.onReceive?.call(
-                cell.state, cell, mq.shift(), mq.shift(), mq.shift()
-            )
+        receive(mq.shift(), mq.shift(), mq.shift(), mq.shift()) while mq.length
         draining = no
+
+    current_receiver = null
+
+    receive = (cell, tag, op, arg) ->
+        current_receiver = cell
+        cell.strategy.onReceive?.call(cell.state, cell, tag, op, arg)
+        current_receiver = null
+
+
 
 
 
@@ -145,9 +186,6 @@
         Strategy, Cell, TRY, CATCH, send, io_send, afterIO
         ERROR, VALUE, FINAL_ERROR, FINAL_VALUE
     }
-
-
-
 
 
 
