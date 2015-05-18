@@ -138,9 +138,9 @@ describe "axos.Cell instances", ->
                     c.set(1,2)
                     expect(c.op).to.equal(1)
                     expect(c.arg).to.equal(2)
-                    done()
             ).cell()
         io_send(c,3,4,5)
+        done()
 
     it "has setValue(), setError(), finish() and abort() shortcuts", ->
         c = new Strategy().cell()
@@ -162,39 +162,39 @@ describe "axos.Cell instances", ->
 
 
 
-    it "is a no-op if a final op has previously been set", ->
-        s = new Strategy(onReceive: (cell, tag, op, arg) -> cell.set(op, arg))
+    it "is a no-op if a final op has previously been set", promised (done) ->
+        s = new Strategy(
+            onReceive: failSafe done, (cell, tag, op, arg) ->
+                cell.set(op, arg)
+                tag?()
+        )
 
         c = s.cell()
-        io_send(c, 1, ERROR, 2)
-        expect(c.op).to.equal(ERROR)
-        expect(c.arg).to.equal(2)
+        io_send(c, (failSafe done, ->
+            expect(c.op).to.equal(ERROR)
+            expect(c.arg).to.equal(2)
+        ), ERROR, 2)
 
         for [op, arg] in [[FINAL_VALUE, 3], [ERROR, 4], [VALUE, 5]]
-            io_send(c, 1, op, arg)
-            expect(c.op).to.equal(FINAL_VALUE)
-            expect(c.arg).to.equal(3)
+            io_send(c, (failSafe done, ->
+                expect(c.op).to.equal(FINAL_VALUE)
+                expect(c.arg).to.equal(3)
+            ), op, arg)
 
         c = s.cell()
-        io_send(c, 1, VALUE, 1)
-        expect(c.op).to.equal(VALUE)
-        expect(c.arg).to.equal(1)
+        io_send(c, (failSafe done, ->
+            expect(c.op).to.equal(VALUE)
+            expect(c.arg).to.equal(1)
+        ), VALUE, 1)
 
         for [op, arg] in [[FINAL_ERROR, 2], [VALUE, 3], [ERROR, 4]]
-            io_send(c, 1, op, arg)
-            expect(c.op).to.equal(FINAL_ERROR)
-            expect(c.arg).to.equal(2)
-
+            io_send(c, (failSafe done, ->
+                expect(c.op).to.equal(FINAL_ERROR)
+                expect(c.arg).to.equal(2)
+            ), op, arg)
+        done()
 
     it "sends *last* op and arg to the cell's subscribers"
-
-
-
-
-
-
-
-
 
 
 
