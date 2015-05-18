@@ -97,31 +97,25 @@ describe "axos.Cell instances", ->
 
     it "default to a default strategy if none given"
 
-  describe "have a .link(tag, topic) method that", ->
-    it "subscribes to another cell, using the given tag"
+  describe "have an .addSink(otherCell, tag) method that", ->
+    it "subscribes otherCell to receive messages, with the given tag"
+    it "can add multiple sinks to the same source"
 
   describe "when subscribed to, drop a subscription when", ->
-    it "the receiver returns false"
-    it "the receiver returns msg(*, *, false)"
-    it "the subscription is canceled via .cancel(sink [, tag])"
+    it "the receiver returns NO_MORE"
+    it "the receiver sets a final value/state"
+    it "the subscription is canceled via .removeSink(cell [, tag])"
     it "the subscriber is closed"
-    it "the cell is closed"
 
   describe "if of KIND_VALUE or KIND_RESULT", ->
     it "send their \"current\" value to subscribed cells"
 
-  describe "have a .set() method", ->
-    it "that errors if called outside .onReceive() or .onRecalc()"
-    it "that sets the .op and .arg"
-    it "...unless a final op has previously been set"
-    it "with setValue(), setError(), finish() and abort() shortcuts"
-    
-        
-
-
-
-
-
+  describe "have a .set() method that", ->
+    it "errors if called outside .onReceive() or .onRecalc()"
+    it "sets the .op and .arg"
+    it "is a no-op if a final op has previously been set"
+    it "sends *last* op and arg to the cell's subscribers"
+    it "has setValue(), setError(), finish() and abort() shortcuts"
 
 
 
