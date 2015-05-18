@@ -80,6 +80,47 @@
 
 
 
+## Operators
+
+    class Operator
+        constructor: (opts = {}) ->
+            @isValue = isValue = opts.isValue ? no
+            @isError = isError = opts.isError ? !isError
+            @isFinal = isFinal = opts.isFinal ? no
+
+            @final   = if @isFinal then this else opts.final
+            @nonFinal = if @isFinal then opts.nonFinal else this
+            @value    = if @isValue then this else opts.value
+            @error    = if @isError then this else opts.error
+
+            @value ?= new Operator({isValue:yes, isError:no, isFinal, error:this})
+            @error ?= new Operator({isValue:no, isError:yes, isFinal, value:this})
+            @final ?= @value.final.error if isError
+            @final ?= new Operator({isValue, isError, isFinal:yes, nonFinal: this})
+            @nonFinal ?= @value.nonFinal.error if isError
+
+        MSG = {op: null, arg:null}
+
+        msg: (arg) ->
+            MSG.op = this
+            MSG.arg = arg
+            return MSG
+
+    ERROR = new Operator()
+    VALUE = ERROR.value
+    FINAL_ERROR = ERROR.final
+    FINAL_VALUE = VALUE.final
+
+
+
+
+
+
+
+
+
+
+
 ## Error Handling
 
     throwingFunction = ->
@@ -100,7 +141,10 @@
 
 ## Exposed API
 
-    module.exports = axos = {Strategy, Cell, TRY, CATCH, send, afterIO}
+    module.exports = axos = {
+        Strategy, Cell, TRY, CATCH, send, afterIO
+        ERROR, VALUE, FINAL_ERROR, FINAL_VALUE
+    }
 
 
 

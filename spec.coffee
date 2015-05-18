@@ -203,6 +203,47 @@ describe "axos.send()", ->
 
 
 
+describe "Operators", ->
+    {VALUE, ERROR, FINAL_VALUE, FINAL_ERROR} = axos
+
+    it "should have appropriate .isError/.isValue/.isFinal properties", ->
+        expect(VALUE.isValue).to.be.true
+        expect(ERROR.isError).to.be.true
+        expect(FINAL_VALUE.isValue).to.be.true
+        expect(FINAL_ERROR.isError).to.be.true
+
+        expect(VALUE.isError).to.be.false
+        expect(ERROR.isValue).to.be.false
+        expect(FINAL_VALUE.isError).to.be.false
+        expect(FINAL_ERROR.isValue).to.be.false
+
+        expect(VALUE.isFinal).to.be.false
+        expect(ERROR.isFinal).to.be.false
+        expect(FINAL_VALUE.isFinal).to.be.true
+        expect(FINAL_ERROR.isFinal).to.be.true
+
+    it "should have symmetric .final/.nonFinal properties", ->
+        expect(VALUE).to.equal(FINAL_VALUE.nonFinal)
+        expect(ERROR).to.equal(FINAL_ERROR.nonFinal)
+        expect(FINAL_VALUE).to.equal(VALUE.final)
+        expect(FINAL_ERROR).to.equal(ERROR.final)
+
+    it "should have symmetric .value/.error properties", ->
+        expect(VALUE).to.equal(ERROR.value)
+        expect(ERROR).to.equal(VALUE.error)
+        expect(FINAL_VALUE).to.equal(FINAL_ERROR.value)
+        expect(FINAL_ERROR).to.equal(FINAL_VALUE.error)
+    
+    it "should have a .msg(arg) method returning the same {op, arg} pair", ->
+        msg1 = VALUE.msg(1)
+        expect(msg1.op).to.equal(VALUE)
+        expect(msg1.arg).to.equal(1)
+        msg2 = ERROR.msg(2)
+        expect(msg2.op).to.equal(ERROR)
+        expect(msg2.arg).to.equal(2)
+        expect(msg2).to.equal(msg1)
+        
+
 describe "axos.TRY(fn) returns a wrapper function that", ->
 
     it "is the same function each time", ->
