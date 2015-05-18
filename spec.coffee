@@ -10,19 +10,19 @@ spy.named = (name, args...) ->
     s.displayName = name
     return s
 
+failSafe = (done, fn) -> ->
+    try fn.apply(this, arguments)
+    catch e then done(e)
+
+Promise = global.Promise ? require 'bluebird'
+
+promised = (fn) -> -> new Promise (res, rej) =>
+    try fn.call this, (e, v) -> if e then rej(e) else res(v)
+    catch e then rej(e)
 
 {
     Strategy, Cell, KIND_RESULT, TRY, CATCH, send, msg, afterIO
 } = axos = require './'
-
-
-
-
-
-
-
-
-
 
 
 
@@ -128,15 +128,12 @@ describe "axos.send()", ->
     beforeEach ->
         @c = new Strategy(onReceive: @spy = spy.named('onReceive')).cell()
 
-    it "in the same order as the calls", (done) ->
+    it "in the same order as the calls", promised (done) ->
         send(@c, 1, 2, 3)
         send(@c, 4, 5, 6)
-        afterIO =>
-            try
-                expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
-                expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
-            catch e
-                return done(e)
+        afterIO failSafe done, =>
+            expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
+            expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
             done()
         return
 
@@ -144,22 +141,25 @@ describe "axos.send()", ->
         send(@c, 1, 2, 3)
         expect(@spy).to.not.have.been.called
 
-    it "in the same event loop pass", (done) ->
+    it "in the same event loop pass", promised (done) ->
         s = spy.named('afterIO', axos, 'afterIO')
         send(@c, 1, 2, 3)
-        afterIO =>
+        afterIO failSafe done, =>
             s.restore() # remove the spy
-            try
-                expect(s).to.have.been.calledOnce
-                expect(@spy).to.have.been.called
-                expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
-                expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
-            catch e
-                console.log e
-                return done(e)
+            expect(s).to.have.been.calledOnce
+            expect(@spy).to.have.been.called
+            expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
+            expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
             done()
         send(@c, 4, 5, 6)
         expect(s).to.have.been.calledOnce
+
+
+
+
+
+
+
 
 
   describe "when called from within onReceive, invokes other onReceives", ->
@@ -169,27 +169,27 @@ describe "axos.send()", ->
         @c1 = new Strategy(onReceive: @s1).cell()
         @c2 = new Strategy(onReceive: @s2 = spy.named('receiver')).cell()
 
-    it "in the same order as the calls, after caller exits, in same pass", (done) ->
+    it "in the same order as the calls, after caller exits, in same pass", promised (done) ->
         s = spy.named('afterIO', axos, 'afterIO')
         send(@c1, 1, 2, 3)
         expect(@s1).to.not.have.been.called
         expect(@s2).to.not.have.been.called
-        afterIO =>
-            try
-                s.restore()
-                expect(s).to.have.been.calledOnce
-                expect(@s1.firstCall).to.have.been.calledWithExactly(@c1, 1, 2, 3)
-                expect(@s1.secondCall).to.have.been.calledWithExactly(@c1, 4, 5, 6)
-                expect(@s2.firstCall).to.have.been.calledWithExactly(@c2, 1, 2, 3)
-                expect(@s2.secondCall).to.have.been.calledWithExactly(@c2, 4, 5, 6)
-                expect(@s2.firstCall).to.have.been.calledAfter(@s1.secondCall)
-            catch e
-                console.log e
-                return done(e)
+        afterIO failSafe done, =>
+            s.restore()
+            expect(s).to.have.been.calledOnce
+            expect(@s1.firstCall).to.have.been.calledWithExactly(@c1, 1, 2, 3)
+            expect(@s1.secondCall).to.have.been.calledWithExactly(@c1, 4, 5, 6)
+            expect(@s2.firstCall).to.have.been.calledWithExactly(@c2, 1, 2, 3)
+            expect(@s2.secondCall).to.have.been.calledWithExactly(@c2, 4, 5, 6)
+            expect(@s2.firstCall).to.have.been.calledAfter(@s1.secondCall)
             done()
         send(@c1, 4, 5, 6)
         expect(s).to.have.been.calledOnce
         return
+
+
+
+
 
 
 
