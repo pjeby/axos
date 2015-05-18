@@ -64,16 +64,16 @@
         io_send()
 
     io_send = ->
+        if draining
+            throw new Error("io_send() must be invoked in a Zalgo-safe way")
         draining = yes
+        send(arguments...) if arguments.length
         while mq.length
             cell = mq.shift()
             cell.strategy.onReceive?.call(
                 cell.state, cell, mq.shift(), mq.shift(), mq.shift()
             )
         draining = no
-
-
-
 
 
 
@@ -142,7 +142,7 @@
 ## Exposed API
 
     module.exports = axos = {
-        Strategy, Cell, TRY, CATCH, send, afterIO
+        Strategy, Cell, TRY, CATCH, send, io_send, afterIO
         ERROR, VALUE, FINAL_ERROR, FINAL_VALUE
     }
 

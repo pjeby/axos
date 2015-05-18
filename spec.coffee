@@ -21,7 +21,7 @@ promised = (fn) -> -> new Promise (res, rej) =>
     catch e then rej(e)
 
 {
-    Strategy, Cell, KIND_RESULT, TRY, CATCH, send, msg, afterIO
+    Strategy, Cell, KIND_RESULT, TRY, CATCH, send, io_send, afterIO
 } = axos = require './'
 
 
@@ -135,7 +135,6 @@ describe "axos.send()", ->
             expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
             expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
             done()
-        return
 
     it "after send()'s caller has exited", ->
         send(@c, 1, 2, 3)
@@ -153,6 +152,7 @@ describe "axos.send()", ->
             done()
         send(@c, 4, 5, 6)
         expect(s).to.have.been.calledOnce
+
 
 
 
@@ -185,7 +185,6 @@ describe "axos.send()", ->
             done()
         send(@c1, 4, 5, 6)
         expect(s).to.have.been.calledOnce
-        return
 
 
 
@@ -194,6 +193,48 @@ describe "axos.send()", ->
 
 
 
+
+
+
+
+
+
+
+
+
+
+describe "axos.io_send()", ->
+
+    beforeEach ->
+        @c = new Strategy(onReceive: @spy = spy.named('onReceive')).cell()
+
+    it "throws if called from inside send() processing", promised (done) ->
+        s = spy.named 'onReceive', failSafe done, =>
+            expect(io_send).throws(/Zalgo/)
+            done()
+        c = new Strategy(onReceive: s).cell()
+        send(c, 1, 2, 3)
+
+    it "flushes pending send() calls", ->
+        send(@c, 1, 2, 3)
+        expect(@spy).to.not.have.been.called
+        io_send()
+        expect(@spy).to.have.been.calledWithExactly(@c, 1, 2, 3)
+
+    it "doesn't affect an already-scheduled draining", ->
+        s = spy.named('afterIO', axos, 'afterIO')
+        send(@c, 1, 2, 3)
+        expect(s).to.have.been.calledOnce
+        io_send()
+        send(@c, 4, 5, 6)
+        expect(s).to.have.been.calledOnce
+        s.restore()
+
+    it "accepts the same arguments as send(), executing them in order", ->
+        send(@c, 1, 2, 3)
+        io_send(@c, 4, 5, 6)
+        expect(@spy.firstCall).to.have.been.calledWithExactly(@c, 1, 2, 3)
+        expect(@spy.secondCall).to.have.been.calledWithExactly(@c, 4, 5, 6)
 
 
 
@@ -233,12 +274,6 @@ describe "Operators", ->
         expect(ERROR).to.equal(VALUE.error)
         expect(FINAL_VALUE).to.equal(FINAL_ERROR.value)
         expect(FINAL_ERROR).to.equal(FINAL_VALUE.error)
-
-
-
-
-
-
 
 
 
