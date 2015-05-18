@@ -110,7 +110,13 @@ describe "axos.Cell instances", ->
   describe "if of KIND_VALUE or KIND_RESULT", ->
     it "send their \"current\" value to subscribed cells"
 
-
+  describe "have a .set() method", ->
+    it "that errors if called outside .onReceive() or .onRecalc()"
+    it "that sets the .op and .arg"
+    it "...unless a final op has previously been set"
+    it "with setValue(), setError(), finish() and abort() shortcuts"
+    
+        
 
 
 
@@ -233,16 +239,16 @@ describe "Operators", ->
         expect(ERROR).to.equal(VALUE.error)
         expect(FINAL_VALUE).to.equal(FINAL_ERROR.value)
         expect(FINAL_ERROR).to.equal(FINAL_VALUE.error)
-    
-    it "should have a .msg(arg) method returning the same {op, arg} pair", ->
-        msg1 = VALUE.msg(1)
-        expect(msg1.op).to.equal(VALUE)
-        expect(msg1.arg).to.equal(1)
-        msg2 = ERROR.msg(2)
-        expect(msg2.op).to.equal(ERROR)
-        expect(msg2.arg).to.equal(2)
-        expect(msg2).to.equal(msg1)
-        
+
+
+
+
+
+
+
+
+
+
 
 describe "axos.TRY(fn) returns a wrapper function that", ->
 

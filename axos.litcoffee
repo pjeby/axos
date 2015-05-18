@@ -99,17 +99,17 @@
             @final ?= new Operator({isValue, isError, isFinal:yes, nonFinal: this})
             @nonFinal ?= @value.nonFinal.error if isError
 
-        MSG = {op: null, arg:null}
-
-        msg: (arg) ->
-            MSG.op = this
-            MSG.arg = arg
-            return MSG
-
     ERROR = new Operator()
     VALUE = ERROR.value
     FINAL_ERROR = ERROR.final
     FINAL_VALUE = VALUE.final
+
+
+
+
+
+
+
 
 
 
