@@ -46,7 +46,6 @@
 
         setValue: (val) -> @set(VALUE, val)
         setError: (err) -> @set(ERROR, err)
-
         finish: (val) -> @set(FINAL_VALUE, val)
         abort:  (err) -> @set(FINAL_ERROR, err)
 
@@ -60,6 +59,7 @@
             return
 
         hasSink: (cell, tag) ->
+            return no unless (sinks = @sinks)?.length
             any_tag = arguments.length<2
             for c, i in sinks = (@sinks ? []) by 2
                 if c is cell and (any_tag or sinks[i+1] is tag)
@@ -71,21 +71,21 @@
             send(cell, tag, @op, @arg) if @op?.isFinal
 
         removeSink: (cell, tag) ->
+            return unless (sinks = @sinks)?.length
             out = 0
             any_tag = arguments.length<2
-            for c, i in sinks = (@sinks ? []) by 2
-                if c is cell and (any_tag or sinks[i+1] is tag)
-                    continue
+            for c, i in sinks by 2
+                continue if c is cell and (any_tag or sinks[i+1] is tag)                    
                 sinks[out++] = c
                 sinks[out++] = sinks[i+1]
             sinks.length = out
 
         notify: ->
+            return unless (sinks = @sinks)?.length
             op = @op
             arg = @arg
-
             out = 0
-            for c, i in sinks = (@sinks ? []) by 2
+            for c, i in sinks by 2
                 unless receive(c, sinks[i+1], op, arg) is NO_MORE
                     sinks[out++] = c
                     sinks[out++] = sinks[i+1]
@@ -123,7 +123,7 @@
 
 ## Message Sending
 
-    afterIO = setImmediate ? (fn) -> setTimeout(fn, 0)
+    afterIO = process?.nextTick ? setImmediate ? (fn) -> setTimeout(fn, 0)
 
     mq = []
     scheduled = draining = no
