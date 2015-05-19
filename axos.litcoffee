@@ -59,27 +59,27 @@
             @op = op
             @arg = arg
 
+        hasSink: (cell, tag) ->
+            any_tag = arguments.length<2
+            for c, i in sinks = (@sinks ? []) by 2
+                if c is cell and (any_tag or sinks[i+1] is tag)
+                    return yes
+            return no
 
+        addSink: (cell, tag) -> (@sinks ?= []).push(cell, tag)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        removeSink: (cell, tag) ->
+            out = 0
+            any_tag = arguments.length<2
+            for c, i in sinks = (@sinks ? []) by 2
+                if c is cell and (any_tag or sinks[i+1] is tag)
+                    continue
+                sinks[out++] = c
+                sinks[out++] = sinks[i+1]
+            sinks.length = out
+            
+            
+            
 ## Message Sending
 
     afterIO = setImmediate ? (fn) -> setTimeout(fn, 0)

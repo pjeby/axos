@@ -197,19 +197,52 @@ describe "axos.Cell instances", ->
     it "sends *last* op and arg to the cell's subscribers"
 
 
-
-
-
-
-
-
   describe "have a .triggerRecalc() method that", ->
     it "errors if called outside .onReceive()"
     it "calls .onRecalc(cell) on the state once, after onReceive() returns"
 
-  describe "have an .addSink(otherCell, tag) method that", ->
-    it "subscribes otherCell to receive messages, with the given tag"
-    it "can add multiple sinks to the same source"
+
+
+  describe "subscription management:", ->
+
+    beforeEach ->
+        @s = new Strategy()
+        @c1 = @s.cell()
+        @c2 = @s.cell()
+
+    it ".hasSink() returns false by default", ->
+        expect(@c1.hasSink(@c2)).to.be.false
+
+    it ".addSink(cell, tag) -> .hasSink(cell[,tag])", ->
+        @c1.addSink(@c2, 1)
+        expect(@c1.hasSink(@c2)).to.be.true
+        expect(@c1.hasSink(@c2, 1)).to.be.true
+        expect(@c1.hasSink(@c2, 2)).to.be.false
+
+    it "supports adding multiple sink/tag combinations", ->
+        @c1.addSink(@c2, 1)
+        @c1.addSink(@c2, 2)
+        expect(@c1.hasSink(@c2)).to.be.true
+        expect(@c1.hasSink(@c2, 1)).to.be.true
+        expect(@c1.hasSink(@c2, 2)).to.be.true
+
+    it ".removeSink(cell, tag) -> not .hasSink(cell, tag)", ->
+        @c1.addSink(@c2, 1)
+        @c1.addSink(@c2, 2)
+        @c1.removeSink(@c2, 1)
+        expect(@c1.hasSink(@c2, 1)).to.be.false
+        expect(@c1.hasSink(@c2, 2)).to.be.true
+        
+    it ".removeSink(cell) -> not .hasSink(cell)", ->
+        @c1.addSink(@c2, 1)
+        @c1.addSink(@c2, 2)
+        @c1.removeSink(@c2)
+        expect(@c1.hasSink(@c2)).to.be.false
+
+
+
+
+
 
   describe "when subscribed to, drop a subscription when", ->
     it "the receiver returns NO_MORE"
@@ -219,6 +252,14 @@ describe "axos.Cell instances", ->
 
   describe "if of KIND_VALUE or KIND_RESULT", ->
     it "send their \"current\" value to subscribed cells"
+
+
+
+
+
+
+
+
 
 
 
