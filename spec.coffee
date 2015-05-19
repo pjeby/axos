@@ -358,14 +358,14 @@ describe "axos.send()", ->
         send(@c, 4, 5, 6)
         expect(s).to.have.been.calledOnce
 
-
-
-
-
-
-
-
-
+    it "doesn't notify sinks unless receiver calls .set()", promised (done) ->
+        c2 = new Strategy(onReceive: sr = spy.named 'sink-receiver').cell()
+        @c.addSink(c2, 2)
+        send(@c, 1, 2, 3)
+        afterIO failSafe done, =>
+            expect(@spy).to.have.been.called.once
+            expect(sr).not.to.have.been.called
+            done()
 
   describe "when called from within onReceive, invokes other onReceives", ->
 

@@ -158,7 +158,7 @@
             rcv = rcv.call(cell.state, cell, tag, op, arg)
         else
             cell.set(op, arg)
-        cell.notify()
+        cell.notify() if cell.op?
         current_receiver = old_receiver
         return rcv
 
