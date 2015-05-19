@@ -42,8 +42,7 @@
 ## Cells
 
     class Cell
-        constructor: (@kind, @strategy, @state) ->
-            @op = @arg = null
+        constructor: (@kind, @strategy, @state) -> @op = @arg = @sinks = null
 
         setValue: (val) -> @set(VALUE, val)
         setError: (err) -> @set(ERROR, err)
@@ -58,6 +57,7 @@
             return if @op?.isFinal
             @op = op
             @arg = arg
+            return
 
         hasSink: (cell, tag) ->
             any_tag = arguments.length<2
@@ -66,7 +66,9 @@
                     return yes
             return no
 
-        addSink: (cell, tag) -> (@sinks ?= []).push(cell, tag)
+        addSink: (cell, tag) ->
+            (@sinks ?= []).push(cell, tag)
+            send(cell, tag, @op, @arg) if @op?.isFinal
 
         removeSink: (cell, tag) ->
             out = 0
@@ -77,9 +79,48 @@
                 sinks[out++] = c
                 sinks[out++] = sinks[i+1]
             sinks.length = out
-            
-            
-            
+
+        notify: ->
+            op = @op
+            arg = @arg
+
+            out = 0
+            for c, i in sinks = (@sinks ? []) by 2
+                unless receive(c, sinks[i+1], op, arg) is NO_MORE
+                    sinks[out++] = c
+                    sinks[out++] = sinks[i+1]
+
+            sinks.length = if op?.isFinal then 0 else out
+            return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Message Sending
 
     afterIO = setImmediate ? (fn) -> setTimeout(fn, 0)
@@ -110,16 +151,16 @@
     current_receiver = null
 
     receive = (cell, tag, op, arg) ->
+        return NO_MORE if cell.op?.isFinal
+        old_receiver = current_receiver
         current_receiver = cell
-        cell.strategy.onReceive?.call(cell.state, cell, tag, op, arg)
-        current_receiver = null
-
-
-
-
-
-
-
+        if (rcv = cell.strategy.onReceive)?
+            rcv = rcv.call(cell.state, cell, tag, op, arg)
+        else
+            cell.set(op, arg)
+        cell.notify()
+        current_receiver = old_receiver
+        return rcv
 
 ## Operators
 
@@ -145,7 +186,7 @@
     FINAL_ERROR = ERROR.final
     FINAL_VALUE = VALUE.final
 
-
+    NO_MORE = {}
 
 
 
@@ -184,7 +225,7 @@
 
     module.exports = axos = {
         Strategy, Cell, TRY, CATCH, send, io_send, afterIO
-        ERROR, VALUE, FINAL_ERROR, FINAL_VALUE
+        ERROR, VALUE, FINAL_ERROR, FINAL_VALUE, NO_MORE
     }
 
 

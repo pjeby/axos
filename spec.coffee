@@ -22,7 +22,7 @@ promised = (fn) -> -> new Promise (res, rej) =>
 
 {
     Strategy, Cell, KIND_RESULT, TRY, CATCH, send, io_send, afterIO,
-    VALUE, ERROR, FINAL_VALUE, FINAL_ERROR
+    VALUE, ERROR, FINAL_VALUE, FINAL_ERROR, NO_MORE
 } = axos = require './'
 
 
@@ -194,12 +194,94 @@ describe "axos.Cell instances", ->
             ), op, arg)
         done()
 
-    it "sends *last* op and arg to the cell's subscribers"
+    it "is automatically invoked when there's no .onReceive()", ->
+        c = new Strategy().cell()
+        s = spy.named('set', c, 'set')
+        io_send(c, 1, 2, 3)
+        expect(s).to.have.been.calledWithExactly(2, 3)
+
+
+
+
+    it "sends tag/op/arg to the cell's subscribers", ->
+        c1 = new Strategy().cell()
+        c2 = new Strategy(onReceive: s2 = spy.named('s2')).cell()
+        c1.addSink(c2, 2)
+        io_send(c1, 4, 5, 6)
+        expect(s2).to.have.been.calledOnce
+        expect(s2).to.have.been.calledWithExactly(c2, 2, 5, 6)
+
+    it "sends *last* op and arg to the cell's subscribers", ->
+        c1 = new Strategy(onReceive: (c) -> c.set(7,8); c.set(9,10)).cell()
+        c2 = new Strategy(onReceive: s2 = spy.named('s2')).cell()
+        c1.addSink(c2, 2)
+        io_send(c1, 4, 5, 6)
+        expect(s2).to.have.been.calledOnce
+        expect(s2).to.have.been.calledWithExactly(c2, 2, 9, 10)
+
+
+  describe "when subscribed to, drop a subscription when", ->
+
+    it "the receiver returns NO_MORE", ->
+        c1 = new Strategy().cell()
+        c2 = new Strategy(onReceive: -> NO_MORE).cell()
+        c1.addSink(c2, 1)
+        io_send(c1, 2, 3, 4)
+        expect(c1.hasSink(c2, 1)).to.be.false
+
+    it "the sink is in a final state", ->
+        c1 = new Strategy().cell()
+        c2 = new Strategy(onReceive: (c,t,o,a) -> c.finish(a); return).cell()
+        c1.addSink(c2, 1)
+        io_send(c1, 2, 3, 4)
+        io_send(c1, 5, 6, 7)    # will not actually be removed until 2nd send
+        expect(c1.hasSink(c2, 1)).to.be.false
+
+    it "the source is in a final state", ->
+        c1 = new Strategy().cell()
+        c2 = new Strategy().cell()
+        c1.addSink(c2, 1)
+        io_send(c1, 2, FINAL_VALUE, 4)
+        expect(c1.hasSink(c2, 1)).to.be.false
+
+    it "the subscription is canceled via .removeSink(cell [, tag])"
+        # This case will be needed eventually because we want to
+        # prevent race conditions caused by *explicitly* removing
+        # subscribers while the subscriber list is being iterated to
+        # send out notifications.
+
+
+  describe "if of KIND_VALUE or KIND_RESULT", ->
+
+    # XXX note: there aren't actually any kinds yet!
+
+    it "send their \"current\" value to subscribed cells", ->
+        c1 = new Strategy().cell()
+        c2 = new Strategy(onReceive: s=spy.named('c2')).cell()
+        io_send(c1, 2, FINAL_VALUE, 4)
+        c1.addSink(c2, 1)
+        io_send()   # allow pending sends to run
+        expect(s).to.have.been.calledWithExactly(c2, 1, FINAL_VALUE, 4)
 
 
   describe "have a .triggerRecalc() method that", ->
     it "errors if called outside .onReceive()"
     it "calls .onRecalc(cell) on the state once, after onReceive() returns"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -232,53 +314,12 @@ describe "axos.Cell instances", ->
         @c1.removeSink(@c2, 1)
         expect(@c1.hasSink(@c2, 1)).to.be.false
         expect(@c1.hasSink(@c2, 2)).to.be.true
-        
+
     it ".removeSink(cell) -> not .hasSink(cell)", ->
         @c1.addSink(@c2, 1)
         @c1.addSink(@c2, 2)
         @c1.removeSink(@c2)
         expect(@c1.hasSink(@c2)).to.be.false
-
-
-
-
-
-
-  describe "when subscribed to, drop a subscription when", ->
-    it "the receiver returns NO_MORE"
-    it "the receiver sets a final value/state"
-    it "the subscription is canceled via .removeSink(cell [, tag])"
-    it "the subscriber is closed"
-
-  describe "if of KIND_VALUE or KIND_RESULT", ->
-    it "send their \"current\" value to subscribed cells"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
