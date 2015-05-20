@@ -42,10 +42,13 @@
 ## Cells
 
     class Cell
-        constructor: (@kind, @strategy, @state) -> @op = @arg = @sinks = null
+
+        constructor: (@kind, @strategy, @state) ->
+            @op = @arg = @sink = @tag = null; @length = 0
 
         setValue: (val) -> @set(VALUE, val)
         setError: (err) -> @set(ERROR, err)
+
         finish: (val) -> @set(FINAL_VALUE, val)
         abort:  (err) -> @set(FINAL_ERROR, err)
 
@@ -59,63 +62,60 @@
             return
 
         hasSink: (cell, tag) ->
-            return no unless (sinks = @sinks)?.length
+            return no unless @sink?
             any_tag = arguments.length<2
-            for c, i in sinks = (@sinks ? []) by 2
-                if c is cell and (any_tag or sinks[i+1] is tag)
-                    return yes
+            return yes if @sink is cell and (any_tag or @tag is tag)
+            return no unless @length
+            for c, i in this by 2
+                return yes if c is cell and (any_tag or this[i+1] is tag)                    
             return no
 
         addSink: (cell, tag) ->
-            (@sinks ?= []).push(cell, tag)
+            if @sink?
+                this[@length++] = cell
+                this[@length++] = tag
+            else
+                @sink = cell
+                @tag = tag
             send(cell, tag, @op, @arg) if @op?.isFinal
 
+
         removeSink: (cell, tag) ->
-            return unless (sinks = @sinks)?.length
-            out = 0
+            return unless @sink?
             any_tag = arguments.length<2
-            for c, i in sinks by 2
-                continue if c is cell and (any_tag or sinks[i+1] is tag)                    
-                sinks[out++] = c
-                sinks[out++] = sinks[i+1]
-            sinks.length = out
+            out = 0
+            out = -2 if @sink is cell and (any_tag or @tag is tag)
+            if @length
+                for c, i in this by 2
+                    continue if c is cell and (any_tag or this[i+1] is tag)
+                    if out<0
+                        @sink = c; @tag = this[i+1]; out = 0
+                    else
+                        this[out++] = c; this[out++] = this[i+1];
+            if out<0
+                @sink = @tag = null
+                out = 0
+            @length = out
 
         notify: ->
-            return unless (sinks = @sinks)?.length
+            return unless @sink? #(sinks = @sinks)?.length
             op = @op
             arg = @arg
-            out = 0
-            for c, i in sinks by 2
-                unless receive(c, sinks[i+1], op, arg) is NO_MORE
-                    sinks[out++] = c
-                    sinks[out++] = sinks[i+1]
-
-            sinks.length = if op?.isFinal then 0 else out
+            out = 0                                                     
+            isFinal = op?.isFinal
+            out = -2 if receive(@sink, @tag, op, arg) is NO_MORE or isFinal
+            if @length
+                for c, i in this by 2
+                    if receive(c, this[i+1], op, arg) is NO_MORE or isFinal
+                        if out < 0
+                            @sink = c; @tag = this[i+1]; out = 0
+                        else
+                            this[out++] = c; this[out++] = this[i+1]
+            if out<0
+                @sink = @tag = null
+                out = 0
+            @length = if isFinal then 0 else out
             return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -124,28 +124,28 @@
 ## Message Sending
 
     afterIO = process?.nextTick ? setImmediate ? (fn) -> setTimeout(fn, 0)
-
     mq = []
     scheduled = draining = no
 
     send = (cell, tag, op, arg) ->
-        mq.push(cell, tag, op, arg)
+        mq[mq.length] = cell; mq[mq.length] = tag; mq[mq.length] = op
+        mq[mq.length] = arg
         schedule() unless scheduled or draining
 
     schedule = ->
         axos.afterIO(drain) unless scheduled
         scheduled = yes
 
-    drain = ->
-        scheduled = no
-        io_send()
+    drain = -> scheduled = no; io_send()
 
     io_send = ->
         if draining
             throw new Error("io_send() must be invoked in a Zalgo-safe way")
         draining = yes
         send(arguments...) if arguments.length
-        receive(mq.shift(), mq.shift(), mq.shift(), mq.shift()) while mq.length
+        pos = 0
+        receive(mq[pos++], mq[pos++], mq[pos++], mq[pos++]) while pos<mq.length
+        mq.length = 0
         draining = no
 
     current_receiver = null
