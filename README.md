@@ -2,7 +2,7 @@
 
 # High-performance Multi-Paradigm Asynchronous Programming
 
-> *Note: this package is less than a week old at this writing, doesn't have anything remotely like a stable API, and has no real documentation yet.  That said, it is **awesomely cool** and you should definitely look at it again once it reaches at least 0.1.x.  Right now, it's still in that totally experimental, proof-of-concepty 0.0.x phase of development, so don't bother unless you find exotic async algorithms and weird V8 optimization tricks endlessly fascinating.  (Oh, and this is a hobby project at the moment, so there are no particular guarantees as to **when** it'll get out of 0.0.x!)*
+> *Note: this package is less than a week old at this writing, doesn't have anything remotely like a stable API, and has no real documentation yet.  That said, it is* ***awesomely cool*** *and you should definitely look at it again once it reaches at least 0.1.x.  Right now, it's still in that totally experimental, proof-of-concepty 0.0.x phase of development, so don't bother unless you find exotic async algorithms and weird V8 optimization tricks endlessly fascinating.  (Oh, and this is a hobby project at the moment, so there are no particular guarantees as to* ***when*** *it'll get out of 0.0.x!)*
 
 ### What Axos is For
 
