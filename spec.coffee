@@ -514,8 +514,8 @@ describe "axos.TRY(fn) returns a wrapper function that", ->
         expect(TRY(-> throw err)().err).to.equal(err)
 
 
-
-
+if global.testPromises then describe.only "Promises/A+ Tests", -> 
+    require("promises-aplus-tests").mocha(require('./Promise.js'))
 
 
 
