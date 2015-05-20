@@ -67,7 +67,7 @@
             return yes if @sink is cell and (any_tag or @tag is tag)
             return no unless @length
             for c, i in this by 2
-                return yes if c is cell and (any_tag or this[i+1] is tag)                    
+                return yes if c is cell and (any_tag or this[i+1] is tag)
             return no
 
         addSink: (cell, tag) ->
@@ -98,11 +98,10 @@
             @length = out
 
         notify: ->
-            return unless @sink? #(sinks = @sinks)?.length
             op = @op
             arg = @arg
-            out = 0                                                     
             isFinal = op?.isFinal
+            out = 0
             out = -2 if receive(@sink, @tag, op, arg) is NO_MORE or isFinal
             if @length
                 for c, i in this by 2
@@ -116,6 +115,7 @@
                 out = 0
             @length = if isFinal then 0 else out
             return
+
 
 
 
@@ -158,7 +158,7 @@
             rcv = rcv.call(cell.state, cell, tag, op, arg)
         else
             cell.set(op, arg)
-        cell.notify() if cell.op?
+        cell.notify() if cell.op? and cell.sink?
         current_receiver = old_receiver
         return rcv
 
