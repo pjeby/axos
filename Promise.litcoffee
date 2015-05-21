@@ -42,21 +42,18 @@
     promiseResolver = new Strategy(
 
         onReceive: (cell, tag, op, arg) ->
+            "use strict"
+            tag = cell.state if op.isError
+            cell.state = null
             if typeof tag is "function"
-                return cell.abort(arg) if op.isError
                 arg = TRY1(tag, arg)
                 return cell.abort(CATCH.err) if arg is CATCH
                 op = FINAL_VALUE
-            else if typeof tag is "object"
-                tag = if op.isError then tag.onR else tag.onF
-                if typeof tag is "function"
-                    arg = TRY1(tag, arg)
-                    return cell.abort(CATCH.err) if arg is CATCH
-                    op = FINAL_VALUE
-            # XXX fast path state set if set via node-callback    
+
             # promise resolution procedure step
             return cell.abort(arg) if op.isError
             arg = arg.__cell__ if arg instanceof Promise
+
             while arg instanceof Cell
                 if arg is cell
                     return cell.abort(
@@ -74,22 +71,19 @@
                 if (thenF = TRY1(getThen, arg)) is CATCH
                     return cell.abort(CATCH.err)
                 if typeof thenF is "function"
-                    runInitializer(thenF, arg, cell, 0)
+                    runInitializer(thenF, arg, cell, null)
                     return NO_MORE
 
             # Not a promise, just return it
             return cell.finish(arg)
 
+
+
+
         initState: (other, onF, onR) ->
             if other instanceof Cell
-                if typeof onR isnt "function"
-                    if typeof onF isnt "function"
-                        tag = 0
-                    else
-                        tag = onF
-                else
-                    tag = {onF, onR}
-                other.addSink(this, tag) 
+                other.addSink(this, onF)
+                return onR
             return 
     )
 
@@ -112,6 +106,12 @@
         catch e
             CATCH.err = e
             return CATCH
+
+
+
+
+
+
 
 
 
