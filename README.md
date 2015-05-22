@@ -44,35 +44,35 @@ In the meantime, though, here's a little preview benchmark, to show how Axos cur
 results for 10000 parallel executions, 1 ms per I/O op
 
 file                                     time(ms)  memory(MB)
-promises-bluebird-generator.js                282       39.87
-callbacks-baseline.js                         299       44.55
-promises-pjeby-axos.js                        402       64.81
-promises-bluebird.js                          405       55.75
-promises-cujojs-when.js                       490       69.74
-promises-tildeio-rsvp.js                      543       90.63
-callbacks-caolan-async-waterfall.js           677       90.39
-promises-lvivski-davy.js                      855      102.00
-promises-dfilatov-vow.js                      906      141.20
-promises-calvinmetcalf-lie.js                1036      150.71
-promises-then-promise.js                     1631      210.69
-promises-obvious-kew.js                      1720      172.16
-generators-tj-co.js                          1728      178.02
-promises-ecmascript6-native.js               1782      209.26
-observables-pozadi-kefir.js                  1787      156.36
-promises-medikoo-deferred.js                 2130      193.38
-observables-Reactive-Extensions-RxJS.js      2927      290.75
-promises-kriskowal-q.js                     10978      751.19
-observables-baconjs-bacon.js.js               OOM         OOM
-observables-caolan-highland.js                OOM         OOM
+callbacks-baseline.js                         208       33.41
+promises-bluebird-generator.js                248       29.08
+promises-pjeby-axos.js                        308       61.71
+promises-bluebird.js                          351       50.44
+promises-cujojs-when.js                       405       67.60
+promises-tildeio-rsvp.js                      500       74.64
+callbacks-caolan-async-waterfall.js           611       80.27
+promises-lvivski-davy.js                      695      111.13
+promises-dfilatov-vow.js                      760      136.60
+promises-calvinmetcalf-lie.js                 796      165.22
+promises-ecmascript6-native.js               1042      188.24
+generators-tj-co.js                          1044      161.27
+promises-obvious-kew.js                      1334      257.33
+promises-then-promise.js                     1645      236.00
+promises-medikoo-deferred.js                 2075      254.26
+observables-Reactive-Extensions-RxJS.js      3003      290.55
+observables-pozadi-kefir.js                  5846      190.34
+promises-kriskowal-q.js                      8277      739.07
+observables-caolan-highland.js               9497      559.50
+observables-baconjs-bacon.js.js             22097      853.16
 
 Platform info:
 Darwin 14.0.0 x64
-Node.JS 0.12.3
-V8 3.28.71.19
+Node.JS 2.0.2
+V8 4.2.77.20
 Intel(R) Core(TM) i5-4260U CPU @ 1.40GHz × 4
 ```
 
-The performance of Axos promises varies a bit by platform and from one run to the next, but is currently almost always within +/-5% of bluebird's speed, within +20% of its memory use, and beating *everything* else -- after only a few days of initial development work.  The reactive wrapper isn't done yet, but I expect it to be about the same speed as Axos's promises...  which means *way* faster than *every other reactive framework*, including Kefir.  (The reason Bacon and Highland show "OOM" in the stats above is because they took *way* too long to run.)
+The performance of Axos promises varies a bit by platform and from one run to the next, but is currently almost always within +/-5% of bluebird's speed (and consistently faster than bluebird promises on the platform shown above), within +20% of its memory use, and beating *everything* else -- after only a few days of initial development work.  The reactive wrapper isn't done yet, but I expect it to be about the same speed as Axos's promises...  which means *way* faster than *every other reactive framework*, including Kefir.
 
 The best part of all this, though, is that Axos is truly *generic*: if somebody invents a newer and cooler async API than generators, observables, or promises, Axos should be capable of offering it with world-class performance.
 
