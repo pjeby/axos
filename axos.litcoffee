@@ -124,12 +124,14 @@
 ## Message Sending
 
     afterIO = process?.nextTick ? setImmediate ? (fn) -> setTimeout(fn, 0)
-    mq = []
+    mq = []; mq_head = mq_tail = 0
+    put = (v) -> mq[mq_tail++] = v
+    take = -> v = mq[mq_head]; mq[mq_head++] = null; v
+
     scheduled = draining = no
 
     send = (cell, tag, op, arg) ->
-        mq[mq.length] = cell; mq[mq.length] = tag; mq[mq.length] = op
-        mq[mq.length] = arg
+        put(cell); put(tag); put(op); put(arg)
         schedule() unless scheduled or draining
 
     schedule = ->
@@ -143,9 +145,8 @@
             throw new Error("io_send() must be invoked in a Zalgo-safe way")
         draining = yes
         send(arguments...) if arguments.length
-        pos = 0
-        receive(mq[pos++], mq[pos++], mq[pos++], mq[pos++]) while pos<mq.length
-        mq.length = 0
+        receive(take(), take(), take(), take()) while mq_head<mq_tail
+        mq_head = mq_tail = 0
         draining = no
 
     current_receiver = null
@@ -156,8 +157,7 @@
         current_receiver = cell
         if (rcv = cell.strategy.onReceive)?
             rcv = rcv.call(cell.state, cell, tag, op, arg)
-        else
-            cell.set(op, arg)
+        else cell.set(op, arg)
         cell.notify() if cell.op? and cell.sink?
         current_receiver = old_receiver
         return rcv
