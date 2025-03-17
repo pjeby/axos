@@ -1,4 +1,7 @@
-<a href="http://promises-aplus.github.com/promises-spec"><img src="http://promises-aplus.github.com/promises-spec/assets/logo-small.png" align="right" alt="Promises/A+ logo" /></a>
+> [!NOTE]
+> This package has been replaced by [Uneventful](https://uneventful.js.org/), which fulfills almost all of the original vision for this project, in modern ESM and TypeScript, with the addition of automatic resource cleanup, and many more features besides.  Check it out!
+
+<a href="https://promisesaplus.com/"><img src="https://promisesaplus.com/assets/logo-small.png" align="right" alt="Promises/A+ logo" /></a>
 
 # High-performance Multi-Paradigm Asynchronous Programming
 
